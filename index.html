@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" />
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tic Tac Toe</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #111; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: 'Press Start 2P', monospace; }
+
+  #ttt-root { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; padding: 2rem 1.5rem; width: 100%; max-width: 420px; }
+
+  /* THEMES */
+  .theme-easy   { --ac: #1D9E75; --ac-light: #E1F5EE; --ac-dark: #085041; }
+  .theme-medium { --ac: #BA7517; --ac-light: #FAEEDA; --ac-dark: #633806; }
+  .theme-hard   { --ac: #E24B4A; --ac-light: #FCEBEB; --ac-dark: #501313; }
+
+  /* PICK SCREEN */
+  #pick-screen { display: flex; flex-direction: column; align-items: center; gap: 2rem; }
+  #pick-title { font-size: 16px; color: #fff; letter-spacing: 3px; text-align: center; }
+  #pick-sub { font-size: 9px; color: #888; letter-spacing: 2px; }
+  #pick-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .pick-btn { font-family: 'Press Start 2P', monospace; font-size: 9px; padding: 14px 20px; cursor: pointer; border-radius: 6px; transition: transform 0.1s, opacity 0.1s; }
+  .pick-btn:hover { opacity: 0.85; }
+  .pick-btn:active { transform: scale(0.96); }
+  .pick-btn[data-d="easy"]   { background: #1D9E75; border: 2px solid #1D9E75; color: #fff; }
+  .pick-btn[data-d="medium"] { background: #BA7517; border: 2px solid #BA7517; color: #fff; }
+  .pick-btn[data-d="hard"]   { background: #E24B4A; border: 2px solid #E24B4A; color: #fff; }
+
+  /* GAME SCREEN */
+  #game-screen { display: none; flex-direction: column; align-items: center; gap: 1.25rem; width: 100%; }
+  #game-screen.visible { display: flex; }
+
+  #ttt-title { font-size: 13px; color: var(--ac); letter-spacing: 2px; }
+
+  /* SCORE */
+  #ttt-score { display: flex; gap: 28px; }
+  .sc { text-align: center; }
+  .sc-label { font-size: 8px; color: #888; margin-bottom: 6px; }
+  .sc-val { font-size: 18px; color: var(--ac); }
+
+  /* DIFF BUTTONS */
+  #ttt-diff { display: flex; gap: 8px; }
+  .diff-btn { font-family: 'Press Start 2P', monospace; font-size: 8px; padding: 8px 13px; background: transparent; border: 1.5px solid #444; color: #666; cursor: pointer; border-radius: 6px; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+  .diff-btn:hover { border-color: var(--ac); color: var(--ac); }
+  .diff-btn.active { background: var(--ac); border-color: var(--ac); color: #fff; }
+
+  /* STATUS */
+  #ttt-status { font-size: 9px; color: var(--ac); text-align: center; min-height: 18px; letter-spacing: 1px; }
+
+  /* BOARD */
+  #ttt-board { display: grid; grid-template-columns: repeat(3, 88px); grid-template-rows: repeat(3, 88px); gap: 0; border: 2px solid var(--ac); background: var(--ac); }
+  .cell { width: 88px; height: 88px; background: #1a1a1a; border: none; cursor: pointer; font-family: 'Press Start 2P', monospace; font-size: 32px; display: flex; align-items: center; justify-content: center; transition: background 0.1s; }
+  .cell:hover:not(.taken) { background: #2a2a2a; }
+  .cell.x { color: var(--ac); }
+  .cell.o { color: #888; }
+  .cell.win-cell { background: var(--ac-dark, #222); }
+
+  /* NEW GAME BTN */
+  #ttt-btn { font-family: 'Press Start 2P', monospace; font-size: 9px; padding: 11px 22px; background: transparent; border: 1.5px solid var(--ac); color: var(--ac); cursor: pointer; border-radius: 6px; letter-spacing: 1px; margin-top: 4px; transition: background 0.15s; }
+  #ttt-btn:hover { background: var(--ac-dark, #222); color: #fff; }
+  #ttt-btn:active { transform: scale(0.97); }
+</style>
+</head>
+<body>
+<div id="ttt-root">
+
+  <div id="pick-screen">
+    <div id="pick-title">TIC TAC TOE</div>
+    <div id="pick-sub">CHOOSE YOUR LEVEL</div>
+    <div id="pick-btns">
+      <button class="pick-btn" data-d="easy">EASY</button>
+      <button class="pick-btn" data-d="medium">MEDIUM</button>
+      <button class="pick-btn" data-d="hard">HARD</button>
+    </div>
+  </div>
+
+  <div id="game-screen">
+    <div id="ttt-title">TIC TAC TOE</div>
+    <div id="ttt-score">
+      <div class="sc"><div class="sc-label">WIN</div><div class="sc-val" id="sc-w">0</div></div>
+      <div class="sc"><div class="sc-label">DRAW</div><div class="sc-val" id="sc-d">0</div></div>
+      <div class="sc"><div class="sc-label">LOSS</div><div class="sc-val" id="sc-l">0</div></div>
+    </div>
+    <div id="ttt-diff">
+      <button class="diff-btn" data-d="easy">EASY</button>
+      <button class="diff-btn" data-d="medium">MEDIUM</button>
+      <button class="diff-btn" data-d="hard">HARD</button>
+    </div>
+    <div id="ttt-status">YOUR TURN  [X]</div>
+    <div id="ttt-board"></div>
+    <button id="ttt-btn" onclick="newGame()">NEW GAME</button>
+  </div>
+
+</div>
+<script>
+let board, gameOver, playerTurn, difficulty = null;
+let scores = {w:0, d:0, l:0};
+const WIN_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+function setDifficulty(d) {
+  difficulty = d;
+  const root = document.getElementById('ttt-root');
+  root.className = 'theme-' + d;
+  document.getElementById('pick-screen').style.display = 'none';
+  document.getElementById('game-screen').classList.add('visible');
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.toggle('active', b.dataset.d === d));
+  scores = {w:0, d:0, l:0};
+  updateScores();
+  newGame();
+}
+
+function newGame() {
+  board = Array(9).fill(null);
+  gameOver = false;
+  playerTurn = true;
+  render();
+  setStatus('YOUR TURN  [X]');
+}
+
+function render() {
+  const b = document.getElementById('ttt-board');
+  b.innerHTML = '';
+  const winner = checkWinner(board);
+  board.forEach((v, i) => {
+    const c = document.createElement('button');
+    c.className = 'cell' + (v ? ' taken ' + v.toLowerCase() : '');
+    c.textContent = v || '';
+    if (winner && winner.line.includes(i)) c.classList.add('win-cell');
+    c.onclick = () => playerMove(i);
+    b.appendChild(c);
+  });
+}
+
+function setStatus(txt) { document.getElementById('ttt-status').textContent = txt; }
+function updateScores() {
+  document.getElementById('sc-w').textContent = scores.w;
+  document.getElementById('sc-d').textContent = scores.d;
+  document.getElementById('sc-l').textContent = scores.l;
+}
+
+function playerMove(i) {
+  if (!playerTurn || board[i] || gameOver) return;
+  board[i] = 'X'; render();
+  const res = checkWinner(board);
+  if (res) { endGame(res.winner); return; }
+  if (board.every(x => x)) { endGame(null); return; }
+  playerTurn = false;
+  setStatus('AI THINKING...');
+  setTimeout(aiMove, 380);
+}
+
+function aiMove() {
+  let idx;
+  if (difficulty === 'easy') idx = randomMove(board);
+  else if (difficulty === 'medium') idx = mediumMove(board);
+  else idx = bestMove(board);
+  board[idx] = 'O'; render();
+  const res = checkWinner(board);
+  if (res) { endGame(res.winner); return; }
+  if (board.every(x => x)) { endGame(null); return; }
+  playerTurn = true;
+  setStatus('YOUR TURN  [X]');
+}
+
+function randomMove(b) {
+  const e = b.map((v,i) => v?-1:i).filter(x=>x>=0);
+  return e[Math.floor(Math.random()*e.length)];
+}
+function mediumMove(b) {
+  const w = findThreat(b,'O'); if (w !== -1) return w;
+  const bl = findThreat(b,'X'); if (bl !== -1) return bl;
+  if (!b[4]) return 4;
+  return randomMove(b);
+}
+function findThreat(b, mark) {
+  for (const [a,bb,c] of WIN_LINES) {
+    const line=[b[a],b[bb],b[c]], cells=[a,bb,c];
+    if (line.filter(v=>v===mark).length===2 && line.filter(v=>!v).length===1)
+      return cells[line.indexOf(null)];
+  }
+  return -1;
+}
+function endGame(winner) {
+  gameOver = true;
+  if (winner==='X') { scores.w++; setStatus('YOU WIN!'); }
+  else if (winner==='O') { scores.l++; setStatus('AI WINS!'); }
+  else { scores.d++; setStatus('DRAW!'); }
+  updateScores();
+}
+function checkWinner(b) {
+  for (const [a,bb,c] of WIN_LINES)
+    if (b[a] && b[a]===b[bb] && b[a]===b[c]) return {winner:b[a], line:[a,bb,c]};
+  return null;
+}
+function minimax(b, isMax) {
+  const res = checkWinner(b);
+  if (res) return res.winner==='O' ? 10 : -10;
+  if (b.every(x=>x)) return 0;
+  const s = [];
+  b.forEach((v,i) => { if (!v) { const nb=[...b]; nb[i]=isMax?'O':'X'; s.push(minimax(nb,!isMax)); } });
+  return isMax ? Math.max(...s) : Math.min(...s);
+}
+function bestMove(b) {
+  let best=-Infinity, idx=-1;
+  b.forEach((v,i) => {
+    if (!v) { const nb=[...b]; nb[i]='O'; const s=minimax(nb,false); if(s>best){best=s;idx=i;} }
+  });
+  return idx;
+}
+
+document.querySelectorAll('.pick-btn').forEach(btn => btn.onclick = () => setDifficulty(btn.dataset.d));
+document.querySelectorAll('.diff-btn').forEach(btn => btn.onclick = () => setDifficulty(btn.dataset.d));
+</script>
+</body>
+</html>
